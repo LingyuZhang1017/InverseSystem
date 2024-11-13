@@ -39,6 +39,8 @@ We provide example data and inversion results. The example data is stored in the
 Using the above example data, execute the compiled program to complete the inversion.
 # Result
 The inversion results using the example data are stored in the Results folder.
-
+# Usage License
+This code is provided for academic research purposes only and may not be used for commercial purposes. Any commercial use, redistribution, or modification of the code requires prior written permission from the project maintainers.
+If you would like to use the code for purposes other than academic research, please contact the project maintainers for further authorization.
 
 
