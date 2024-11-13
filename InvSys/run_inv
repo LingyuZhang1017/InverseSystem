@@ -1,0 +1,68 @@
+#!/bin/bash
+
+if [ 'x'$1 == 'x' ]; then
+  echo 'useage: run_inv rcfile'
+  exit
+fi
+
+rcfile=$1
+
+job_name=`awk '{if ($1=="job.name") print$3;}' $rcfile`
+job_dir=`awk '{if ($1=="job.dir") print$3;}' $rcfile`
+
+if [ ! -d $job_dir ]; then
+  echo 'job.dir do not existed: '$job_dir
+  exit
+fi
+
+job_root=$job_dir'/'$job_name
+if [ ! -d $job_root ];then
+  mkdir $job_root
+fi
+
+preInv.exe $rcfile
+
+transfile=`awk '{if ($1=="inv.matrix.file") print$3;}' $rcfile`
+fluxfile_i1=`awk '{if ($1=="inv.prior.flux.file") print$3;}' $rcfile`
+fluxfile_Q=`awk '{if ($1=="inv.prior.Q.file") print$3;}' $rcfile`
+obsfile=`awk '{if ($1=="inv.obs.conc.file") print$3;}' $rcfile`
+obsfile_R=`awk '{if ($1=="inv.obs.R.file") print$3;}' $rcfile`
+fluxfile_o=`awk '{if ($1=="inv.output.flux.file") print$3;}' $rcfile`
+fluxfile_u=`awk '{if ($1=="inv.output.uncert.file") print$3;}' $rcfile`
+n=`awk '{print $1}' $job_root/M_inv`
+m=`awk '{print $1}' $job_root/N_obs`
+
+echo $transfile
+echo $fluxfile_i1
+echo $fluxfile_Q
+echo $obsfile
+echo $obsfile_R
+echo $fluxfile_o
+echo $fluxfile_u
+echo $m
+echo $n
+
+cp Inv_code/svd.h $job_root/
+cp Inv_code/inv_cpp.cpp $job_root/
+
+cd $job_root
+sed 's/##FTRANSMS##/'$transfile'/g' inv_cpp.cpp > tmp.cpp; mv tmp.cpp inv_cpp.cpp
+sed 's/##FPRIORS##/'$fluxfile_i1'/g' inv_cpp.cpp > tmp.cpp; mv tmp.cpp inv_cpp.cpp
+sed 's/##FQMATS##/'$fluxfile_Q'/g' inv_cpp.cpp > tmp.cpp; mv tmp.cpp inv_cpp.cpp  
+sed 's/##CO2FS##/'$obsfile'/g' inv_cpp.cpp > tmp.cpp; mv tmp.cpp inv_cpp.cpp
+sed 's/##VARFS##/'$obsfile_R'/g' inv_cpp.cpp > tmp.cpp; mv tmp.cpp inv_cpp.cpp
+sed 's/##FLUXFS##/'$fluxfile_o'/g' inv_cpp.cpp > tmp.cpp; mv tmp.cpp inv_cpp.cpp
+sed 's/##UNCERTS##/'$fluxfile_u'/g' inv_cpp.cpp > tmp.cpp; mv tmp.cpp inv_cpp.cpp
+sed 's/##M##/'$m'/g' inv_cpp.cpp > tmp.cpp; mv tmp.cpp inv_cpp.cpp                            
+sed 's/##N##/'$n'/g' inv_cpp.cpp > tmp.cpp; mv tmp.cpp inv_cpp.cpp
+
+c++ inv_cpp.cpp -o $job_name.exe
+
+$job_name.exe
+
+cd -
+
+postInv.exe $rcfile
+
+
+
